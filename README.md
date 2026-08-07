@@ -186,9 +186,3 @@ npm run dev
 | client | `npm run build` | Production build |
 
 ---
-
-## 8. Deliberately Out of Scope
-
-Recruiter and admin modules, job posting/listing, applications, status tracking,
-job search, dashboard, analytics, chat, payments, and other advanced features were
-**not** implemented per the project requirements.
