@@ -54,7 +54,7 @@ const createProfile = async (req, res, next) => {
     const existing = await Student.findOne({ user: req.user._id })
     if (existing) {
       return res
-        .status(400)
+        .status(409)
         .json({
           success: false,
           message: "Profile already exists. Use update instead.",

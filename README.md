@@ -12,7 +12,7 @@ analytics features are intentionally out of scope.
 ## 1. Folder Structure
 
 ```
-MERN/
+college-placement-portal/
 ├── package.json                  # root scripts (run server + client together)
 ├── .gitignore
 ├── README.md
