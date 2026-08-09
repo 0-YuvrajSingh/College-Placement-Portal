@@ -1,4 +1,5 @@
 const mongoose = require("mongoose")
+const { DEPARTMENTS } = require("../config/constants")
 
 const resumeSchema = new mongoose.Schema(
   {
@@ -8,6 +9,17 @@ const resumeSchema = new mongoose.Schema(
     mimetype: { type: String, required: true },
     size: { type: Number, required: true },
     uploadedAt: { type: Date, default: Date.now },
+  },
+  { _id: false },
+)
+
+const educationSchema = new mongoose.Schema(
+  {
+    degree: { type: String, trim: true },
+    institution: { type: String, trim: true },
+    startYear: { type: Number },
+    endYear: { type: Number },
+    percentage: { type: Number, min: 0, max: 100 },
   },
   { _id: false },
 )
@@ -41,17 +53,33 @@ const studentSchema = new mongoose.Schema(
     department: {
       type: String,
       required: [true, "Department is required"],
-      enum: [
-        "Computer Science",
-        "Information Technology",
-        "Electronics & Communication",
-        "Electrical",
-        "Mechanical",
-        "Civil",
-        "Automobile",
-        "Chemical",
-        "Other",
-      ],
+      enum: DEPARTMENTS,
+    },
+    rollNumber: {
+      type: String,
+      trim: true,
+      uppercase: true,
+    },
+    registrationNumber: {
+      type: String,
+      trim: true,
+    },
+    college: {
+      type: String,
+      trim: true,
+    },
+    course: {
+      type: String,
+      trim: true,
+    },
+    graduationYear: {
+      type: Number,
+      min: [2000, "Graduation year must be at least 2000"],
+      max: [2100, "Graduation year cannot exceed 2100"],
+    },
+    hasActiveBacklogs: {
+      type: Boolean,
+      default: false,
     },
     year: {
       type: Number,
@@ -73,6 +101,18 @@ const studentSchema = new mongoose.Schema(
       required: [true, "Semester is required"],
       min: [1, "Semester must be at least 1"],
       max: [8, "Semester cannot exceed 8"],
+    },
+    education: {
+      type: [educationSchema],
+      default: [],
+    },
+    profileCompleted: {
+      type: Boolean,
+      default: false,
+    },
+    isPlaced: {
+      type: Boolean,
+      default: false,
     },
     resume: {
       type: resumeSchema,

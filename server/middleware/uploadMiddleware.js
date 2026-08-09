@@ -1,6 +1,6 @@
 const path = require("path")
-const fs = require("fs")
 const multer = require("multer")
+const { getUploadsDir, ensureUploadsDir } = require("../services/file.service")
 
 const ALLOWED_MIMETYPES = [
   "application/pdf",
@@ -8,13 +8,11 @@ const ALLOWED_MIMETYPES = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ]
 const ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx"]
-const MAX_FILE_SIZE = 5 * 1024 * 1024
+const MAX_FILE_SIZE =
+  parseInt(process.env.MAX_FILE_SIZE, 10) || 5 * 1024 * 1024
 
-const uploadDir = path.join(__dirname, "..", "uploads")
-
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true })
-}
+const uploadDir = getUploadsDir()
+ensureUploadsDir()
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -36,10 +34,11 @@ const fileFilter = (req, file, cb) => {
   ) {
     cb(null, true)
   } else {
-    cb(
-      new Error("Only PDF or Word (.pdf, .doc, .docx) files are allowed"),
-      false,
+    const error = new Error(
+      "Only PDF or Word (.pdf, .doc, .docx) files are allowed",
     )
+    error.statusCode = 400
+    cb(error, false)
   }
 }
 
@@ -49,4 +48,11 @@ const upload = multer({
   limits: { fileSize: MAX_FILE_SIZE },
 })
 
-module.exports = { upload, ALLOWED_MIMETYPES, MAX_FILE_SIZE }
+const uploadSingle = (fieldName) => (req, res, next) => {
+  upload.single(fieldName)(req, res, (err) => {
+    if (err) return next(err)
+    next()
+  })
+}
+
+module.exports = { upload, uploadSingle, ALLOWED_MIMETYPES, MAX_FILE_SIZE }
