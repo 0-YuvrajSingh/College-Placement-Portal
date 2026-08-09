@@ -1,5 +1,7 @@
 const request = require("supertest")
 const app = require("../app")
+const Student = require("../models/Student")
+const Recruiter = require("../models/Recruiter")
 const { createUser, login } = require("./helpers")
 
 describe("Authentication", () => {
@@ -20,6 +22,43 @@ describe("Authentication", () => {
         .send({ name: "HR Person", email: "hr@test.com", password: "secret123", role: "recruiter" })
       expect(res.status).toBe(201)
       expect(res.body.data.user.role).toBe("recruiter")
+    })
+
+    it("creates a partial student profile with branch/CGPA/roll at signup", async () => {
+      const res = await request(app)
+        .post("/api/auth/register")
+        .send({
+          name: "Branch Student",
+          email: "branch@test.edu",
+          password: "secret123",
+          role: "student",
+          department: "CSE",
+          cgpa: 8.5,
+          rollNumber: "21CS001",
+        })
+      expect(res.status).toBe(201)
+      const profile = await Student.findOne({ user: res.body.data.user.id }).lean()
+      expect(profile).toBeTruthy()
+      expect(profile.department).toBe("CSE")
+      expect(profile.cgpa).toBe(8.5)
+      expect(profile.rollNumber).toBe("21CS001")
+      expect(profile.profileCompleted).toBe(false)
+    })
+
+    it("creates a recruiter profile with company name at signup", async () => {
+      const res = await request(app)
+        .post("/api/auth/register")
+        .send({
+          name: "HR Person",
+          email: "company@test.com",
+          password: "secret123",
+          role: "recruiter",
+          companyName: "Acme Corp",
+        })
+      expect(res.status).toBe(201)
+      const profile = await Recruiter.findOne({ user: res.body.data.user.id }).lean()
+      expect(profile).toBeTruthy()
+      expect(profile.companyName).toBe("Acme Corp")
     })
 
     it("rejects duplicate email with 409", async () => {

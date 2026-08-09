@@ -136,7 +136,7 @@ const seed = async () => {
       phone: "9988776655",
       college: "Example Institute of Technology",
       course: "B.Tech",
-      department: "Computer Science",
+      department: "CSE",
       year: 4,
       semester: 8,
       cgpa: 8.9,
@@ -145,7 +145,7 @@ const seed = async () => {
       skills: ["JavaScript", "React", "Node.js", "MongoDB"],
       education: [
         {
-          degree: "B.Tech Computer Science",
+          degree: "B.Tech CSE",
           institution: "Example Institute of Technology",
           startYear: 2022,
           endYear: 2026,
@@ -162,7 +162,7 @@ const seed = async () => {
       phone: "9876543210",
       college: "Example Institute of Technology",
       course: "B.Tech",
-      department: "Information Technology",
+      department: "IT",
       year: 4,
       semester: 8,
       cgpa: 7.2,
@@ -179,7 +179,7 @@ const seed = async () => {
       phone: "9765432109",
       college: "Example Institute of Technology",
       course: "B.Tech",
-      department: "Electronics & Communication",
+      department: "ECE",
       year: 3,
       semester: 6,
       cgpa: 6.8,
@@ -196,7 +196,7 @@ const seed = async () => {
       phone: "9654321098",
       college: "Example Institute of Technology",
       course: "B.Tech",
-      department: "Computer Science",
+      department: "CSE",
       year: 4,
       semester: 8,
       cgpa: 9.1,
@@ -214,7 +214,7 @@ const seed = async () => {
       phone: "9543210987",
       college: "Example Institute of Technology",
       course: "B.Tech",
-      department: "Mechanical",
+      department: "ME",
       year: 4,
       semester: 8,
       cgpa: 7.9,
@@ -223,6 +223,9 @@ const seed = async () => {
       skills: ["AutoCAD", "SolidWorks", "CATIA"],
     },
   ])
+
+  // Seed students are fully-formed, so mark them as completed.
+  await Student.updateMany({}, { $set: { profileCompleted: true } })
 
   // ---------- Jobs ----------
   const softwareEngineer = await Job.create({
@@ -238,7 +241,7 @@ const seed = async () => {
     skills: ["JavaScript", "React", "Node.js", "MongoDB"],
     eligibility: {
       minimumCgpa: 7.5,
-      eligibleDepartments: ["Computer Science", "Information Technology"],
+      eligibleDepartments: ["CSE", "IT"],
       eligibleGraduationYears: [2026],
       requiredSkills: ["JavaScript"],
       backlogAllowed: false,
@@ -260,7 +263,7 @@ const seed = async () => {
     skills: ["Node.js", "MongoDB", "Express"],
     eligibility: {
       minimumCgpa: 7,
-      eligibleDepartments: ["Computer Science"],
+      eligibleDepartments: ["CSE"],
       eligibleGraduationYears: [2026],
       requiredSkills: ["Node.js"],
       backlogAllowed: false,
@@ -281,7 +284,7 @@ const seed = async () => {
     skills: ["JavaScript", "HTML", "CSS"],
     eligibility: {
       minimumCgpa: 6.5,
-      eligibleDepartments: ["Computer Science", "Information Technology"],
+      eligibleDepartments: ["CSE", "IT"],
       eligibleGraduationYears: [2026],
       requiredSkills: [],
       backlogAllowed: true,
@@ -303,7 +306,7 @@ const seed = async () => {
     skills: ["Java", "Spring", "MySQL"],
     eligibility: {
       minimumCgpa: 7,
-      eligibleDepartments: ["Computer Science", "Information Technology"],
+      eligibleDepartments: ["CSE", "IT"],
       eligibleGraduationYears: [2026, 2027],
       requiredSkills: ["Java"],
       backlogAllowed: true,
@@ -325,7 +328,7 @@ const seed = async () => {
     skills: ["SQL", "Excel", "Power BI"],
     eligibility: {
       minimumCgpa: 6.5,
-      eligibleDepartments: ["Computer Science", "Information Technology"],
+      eligibleDepartments: ["CSE", "IT"],
       eligibleGraduationYears: [2026],
       requiredSkills: ["SQL"],
       backlogAllowed: true,

@@ -6,12 +6,16 @@ const { ROLES } = require("../config/constants")
 // @route   POST /api/auth/register
 // @access  Public
 const register = asyncHandler(async (req, res) => {
-  const { name, email, password, role } = req.body
+  const { name, email, password, role, department, cgpa, rollNumber, companyName } = req.body
   const user = await authService.registerUser({
     name,
     email,
     password,
     role: role || ROLES.STUDENT,
+    department,
+    cgpa,
+    rollNumber,
+    companyName,
   })
   res.status(201).json({ success: true, data: authService.buildAuthResponse(user) })
 })

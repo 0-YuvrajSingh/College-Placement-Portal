@@ -5,11 +5,12 @@ import { jobsApi } from "@/api/jobs"
 import { ApiError } from "@/lib/api"
 import { useDebouncedValue } from "@/hooks/useDebounce"
 import { Badge, EmptyState, JobStatusBadge, PageLoader, Pagination } from "@/components/ui"
-import { DEPARTMENTS, EMPLOYMENT_TYPES, WORK_MODES } from "@/lib/constants"
+import { DEPARTMENTS, EMPLOYMENT_TYPES } from "@/lib/constants"
 import { cx, formatDate, formatSalary, initials, isClosingSoon } from "@/lib/format"
 import type { JobListItem } from "@/types"
 
 const TYPES = ["All", ...EMPLOYMENT_TYPES]
+const BRANCHES = ["All", ...DEPARTMENTS]
 const SORT_OPTIONS = ["Deadline (Soonest)", "Package (Highest)", "Applicants (Fewest)"]
 
 function LogoMark({ name }: { name: string }) {
@@ -139,7 +140,6 @@ export default function Jobs() {
   const debouncedSearch = useDebouncedValue(search, 350)
   const [type, setType] = useState("All")
   const [department, setDepartment] = useState("All")
-  const [workMode, setWorkMode] = useState("All")
   const [eligibleOnly, setEligibleOnly] = useState(false)
   const [sort, setSort] = useState(SORT_OPTIONS[0])
   const [page, setPage] = useState(1)
@@ -163,7 +163,6 @@ export default function Jobs() {
         search: debouncedSearch || undefined,
         employmentType: type === "All" ? undefined : type,
         department: department === "All" ? undefined : department,
-        workMode: workMode === "All" ? undefined : workMode,
         eligible: eligibleOnly || undefined,
         sortBy: conf?.sortBy,
         order: conf?.order,
@@ -178,7 +177,7 @@ export default function Jobs() {
     } finally {
       setLoading(false)
     }
-  }, [debouncedSearch, type, department, workMode, eligibleOnly, sort, page])
+  }, [debouncedSearch, type, department, eligibleOnly, sort, page])
 
   useEffect(() => {
     void load()
@@ -241,36 +240,20 @@ export default function Jobs() {
           <div className="pf-flex-center" style={{ color: "var(--pf-text-secondary)", fontSize: 12, fontWeight: 600 }}>
             Branch:
           </div>
-          <select
-            className="select"
-            style={{ width: 200 }}
-            value={department}
-            onChange={(e) => {
-              setDepartment(e.target.value)
-              setPage(1)
-            }}
-          >
-            <option value="All">All departments</option>
-            {DEPARTMENTS.map((d) => (
-              <option key={d} value={d}>{d}</option>
-            ))}
-          </select>
+          {BRANCHES.map((b) => (
+            <button
+              key={b}
+              className={cx("chip", b === department && "chip-active")}
+              onClick={() => {
+                setDepartment(b)
+                setPage(1)
+              }}
+            >
+              {b}
+            </button>
+          ))}
 
-          <select
-            className="select"
-            style={{ width: 130 }}
-            value={workMode}
-            onChange={(e) => {
-              setWorkMode(e.target.value)
-              setPage(1)
-            }}
-          >
-            <option value="All">All modes</option>
-            {WORK_MODES.map((m) => (
-              <option key={m} value={m}>{m}</option>
-            ))}
-          </select>
-
+          <div style={{ width: 1, height: 20, background: "var(--pf-border)", margin: "0 4px" }} />
           <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, fontWeight: 600, color: eligibleOnly ? "var(--pf-teal)" : "var(--pf-text-secondary)" }}>
             <input
               type="checkbox"

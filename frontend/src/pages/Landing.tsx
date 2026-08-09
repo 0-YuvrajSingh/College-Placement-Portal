@@ -79,6 +79,8 @@ export default function Landing() {
     }
   }, [])
 
+  const seasonStart = new Date().getFullYear()
+  const seasonLabel = `${seasonStart}–${String((seasonStart + 1) % 100).padStart(2, "0")} Placement Season`
   const packageLabel = stats?.highestPackage != null ? `₹${stats.highestPackage}L` : "—"
   const placementRate = stats?.placementRate != null ? `${stats.placementRate}%` : "—"
   const students = stats?.totalStudents != null ? stats.totalStudents.toLocaleString("en-IN") : "—"
@@ -91,33 +93,73 @@ export default function Landing() {
       {/* Public navbar */}
       <header
         style={{
-          position: "sticky",
+          position: "fixed",
           top: 0,
-          zIndex: 30,
-          background: "rgba(15,31,61,0.98)",
+          left: 0,
+          right: 0,
+          zIndex: 200,
+          background: "var(--pf-navy)",
           borderBottom: "1px solid rgba(255,255,255,0.08)",
-          padding: "0 32px",
           height: 56,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
         }}
       >
-        <div className="pf-brand" style={{ padding: 0 }}>
-          <div className="pf-brand-mark">P</div>
-          <div className="pf-brand-name">PlaceForge</div>
-        </div>
-        <div className="pf-gap-8">
-          {user ? (
-            <button className="btn btn-primary btn-sm" onClick={() => navigate(homeForRole(user.role))}>
-              Go to dashboard <ArrowRight size={13} />
-            </button>
-          ) : (
-            <>
-              <button className="btn btn-translucent btn-sm" onClick={() => navigate("/login")}>Log in</button>
-              <button className="btn btn-primary btn-sm" onClick={() => navigate("/register")}>Get started</button>
-            </>
-          )}
+        <div
+          style={{
+            maxWidth: 1280,
+            margin: "0 auto",
+            padding: "0 32px",
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => navigate("/")}>
+            <div
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: 7,
+                background: "var(--pf-teal)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <span style={{ color: "#fff", fontFamily: "Manrope", fontWeight: 800, fontSize: 13 }}>P</span>
+            </div>
+            <span style={{ color: "#fff", fontFamily: "Manrope", fontWeight: 800, fontSize: 17, letterSpacing: "-0.3px" }}>
+              PlaceForge
+            </span>
+          </div>
+          <nav style={{ display: "flex", alignItems: "center", gap: 28 }}>
+            {["How it works", "For Recruiters", "For Students"].map((l) => (
+              <a
+                key={l}
+                href="#"
+                onClick={(e) => e.preventDefault()}
+                style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 500, textDecoration: "none", transition: "color 0.12s" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#fff" }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "rgba(255,255,255,0.6)" }}
+              >
+                {l}
+              </a>
+            ))}
+          </nav>
+          <div style={{ display: "flex", gap: 8 }}>
+            {user ? (
+              <button className="btn btn-primary btn-sm" onClick={() => navigate(homeForRole(user.role))}>
+                Go to dashboard <ArrowRight size={13} />
+              </button>
+            ) : (
+              <>
+                <button className="btn btn-ghost btn-sm" style={{ color: "rgba(255,255,255,0.7)" }} onClick={() => navigate("/login")}>
+                  Sign in
+                </button>
+                <button className="btn btn-primary btn-sm" onClick={() => navigate("/register")}>Get started</button>
+              </>
+            )}
+          </div>
         </div>
       </header>
 
@@ -200,7 +242,7 @@ export default function Landing() {
             {/* Stats panel */}
             <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: 28 }}>
               <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 20 }}>
-                Placement Season
+                {seasonLabel}
               </div>
               {[
                 { val: students, label: "Students Registered", color: "#fff" },
@@ -258,7 +300,7 @@ export default function Landing() {
                 heading: "Your career journey starts here",
                 desc: "Discover relevant opportunities, track every application, and keep your career profile recruiter-ready — all in one place.",
                 action: "View Student Dashboard",
-                path: "/register",
+                path: "/student",
               },
               {
                 icon: <Building2 size={20} />,
@@ -266,7 +308,7 @@ export default function Landing() {
                 heading: "Hire from top engineering colleges",
                 desc: "Post openings, manage applications, shortlist candidates, and close hires through an efficient structured workflow.",
                 action: "View Recruiter Portal",
-                path: "/login",
+                path: "/recruiter",
               },
               {
                 icon: <Users size={20} />,
@@ -274,7 +316,7 @@ export default function Landing() {
                 heading: "Centralize your placement operations",
                 desc: "Monitor all recruitment activity, manage student and company accounts, and report placement outcomes from one admin console.",
                 action: "View Admin Console",
-                path: "/login",
+                path: "/admin",
               },
             ].map((item, i) => (
               <div key={item.label} style={{ padding: "32px 28px", borderLeft: i > 0 ? "1px solid var(--pf-border)" : "none" }}>
@@ -348,7 +390,7 @@ export default function Landing() {
             <button className="btn btn-primary btn-lg" onClick={() => navigate("/register")}>Create your account</button>
             <button
               className="btn btn-lg"
-              onClick={explore}
+              onClick={() => navigate("/student")}
               style={{ color: "rgba(255,255,255,0.75)", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.05)" }}
             >
               Explore demo

@@ -2,7 +2,6 @@ import { useEffect, type ReactNode } from "react"
 import { ChevronLeft, ChevronRight, Inbox, X } from "lucide-react"
 import type { ApplicationStatus, JobStatus } from "@/types"
 import {
-  APPLICATION_STATUS_COLORS,
   APPLICATION_STATUS_LABELS,
   JOB_STATUS_LABELS,
 } from "@/lib/constants"
@@ -110,64 +109,6 @@ export function ApplicationStatusBadge({ status }: { status: ApplicationStatus }
     WITHDRAWN: "muted",
   }
   return <Badge tone={toneMap[status] || "muted"}>{APPLICATION_STATUS_LABELS[status]}</Badge>
-}
-
-export function StatusDot({ status }: { status: ApplicationStatus }) {
-  const color = APPLICATION_STATUS_COLORS[status] || "#94A3B8"
-  return (
-    <span
-      style={{
-        width: 9,
-        height: 9,
-        borderRadius: "50%",
-        background: color,
-        display: "inline-block",
-        flexShrink: 0,
-      }}
-    />
-  )
-}
-
-export function StatCard({
-  label,
-  value,
-  icon,
-  accent = "var(--pf-teal)",
-}: {
-  label: string
-  value: ReactNode
-  icon?: ReactNode
-  accent?: string
-}) {
-  return (
-    <div className="card" style={{ padding: "18px 20px", display: "flex", gap: 14, alignItems: "center" }}>
-      {icon && (
-        <div
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 8,
-            background: `color-mix(in srgb, ${accent} 12%, white)`,
-            color: accent,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
-          {icon}
-        </div>
-      )}
-      <div>
-        <div style={{ fontSize: 11, color: "var(--pf-text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-          {label}
-        </div>
-        <div style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 800, fontSize: 22, color: "var(--pf-text)", lineHeight: 1.2 }}>
-          {value}
-        </div>
-      </div>
-    </div>
-  )
 }
 
 export function Pagination({
@@ -332,15 +273,6 @@ export function Field({
   )
 }
 
-export function InfoRow({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div style={{ padding: "9px 0", display: "flex", gap: 12, borderBottom: "1px solid var(--pf-border)" }}>
-      <div style={{ width: 150, flexShrink: 0, color: "var(--pf-text-muted)", fontSize: 12.5 }}>{label}</div>
-      <div style={{ flex: 1, color: "var(--pf-text)", fontSize: 13, fontWeight: 500, wordBreak: "break-word" }}>{value}</div>
-    </div>
-  )
-}
-
 export function PageHeader({
   title,
   subtitle,
@@ -384,6 +316,10 @@ export function Skeleton({
 
 export function MetricStrip({
   items,
+  cellPadding = "20px 28px",
+  valueSize = 22,
+  iconAlpha = 18,
+  containerStyle,
 }: {
   items: {
     label: string
@@ -391,14 +327,18 @@ export function MetricStrip({
     icon?: ReactNode
     color?: string
   }[]
+  cellPadding?: string
+  valueSize?: number
+  iconAlpha?: number
+  containerStyle?: React.CSSProperties
 }) {
   return (
-    <div className="stats-strip">
+    <div className="stats-strip" style={containerStyle}>
       {items.map((s, i) => (
         <div
           key={s.label}
           style={{
-            padding: "20px 28px",
+            padding: cellPadding,
             borderLeft: i > 0 ? "1px solid var(--pf-border)" : "none",
             display: "flex",
             alignItems: "center",
@@ -411,7 +351,7 @@ export function MetricStrip({
                 width: 36,
                 height: 36,
                 borderRadius: 8,
-                background: `color-mix(in srgb, ${s.color || "var(--pf-navy)"} 18%, white)`,
+                background: `color-mix(in srgb, ${s.color || "var(--pf-navy)"} ${iconAlpha}%, white)`,
                 color: s.color || "var(--pf-navy)",
                 display: "flex",
                 alignItems: "center",
@@ -427,7 +367,7 @@ export function MetricStrip({
               style={{
                 fontFamily: "'Manrope', sans-serif",
                 fontWeight: 800,
-                fontSize: 22,
+                fontSize: valueSize,
                 color: s.color || "var(--pf-navy)",
                 lineHeight: 1,
               }}

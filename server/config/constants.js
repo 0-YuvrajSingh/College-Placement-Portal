@@ -14,6 +14,15 @@ const DEPARTMENTS = Object.freeze([
   "Automobile",
   "Chemical",
   "Other",
+  "CSE",
+  "IT",
+  "ECE",
+  "EEE",
+  "ME",
+  "CE",
+  "AE",
+  "AIDS",
+  "CSD",
 ])
 
 const JOB_STATUS = Object.freeze({

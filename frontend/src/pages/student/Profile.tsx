@@ -77,15 +77,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
-function DisplayField({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div>
-      <div style={{ fontSize: 11, fontWeight: 600, color: "var(--pf-text-muted)", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 5 }}>{label}</div>
-      <div style={{ fontSize: 14, color: "var(--pf-text)", fontWeight: 500 }}>{value || "—"}</div>
-    </div>
-  )
-}
-
 export default function Profile() {
   const { refreshProfile } = useAuth()
   const { success, error: toastError } = useToast()
@@ -289,7 +280,7 @@ export default function Profile() {
             </Section>
 
             <Section title="Academic Information">
-              <div className="grid-2">
+              <div className="grid-3">
                 <Field label="Department *">
                   <select className="select" value={form.department} onChange={(e) => set({ department: e.target.value })}>
                     <option value="">Select department</option>

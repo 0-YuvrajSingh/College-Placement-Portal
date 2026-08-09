@@ -90,6 +90,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: string
       password: string
       role: "student" | "recruiter"
+      department?: string
+      cgpa?: number
+      rollNumber?: string
+      companyName?: string
     }) => {
       const { token, user: registered } = await authApi.register(data)
       localStorage.setItem(TOKEN_KEY, token)

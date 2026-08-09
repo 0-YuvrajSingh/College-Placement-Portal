@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import { Link } from "react-router-dom"
-import { CheckCircle, FileText, Inbox } from "lucide-react"
+import { Inbox } from "lucide-react"
 import { studentApi } from "@/api/student"
 import { useToast } from "@/context/ToastContext"
 import { ApiError } from "@/lib/api"

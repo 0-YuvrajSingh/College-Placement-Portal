@@ -6,7 +6,7 @@ import { useToast } from "@/context/ToastContext"
 import { ApiError } from "@/lib/api"
 import { PageHeader, PageLoader, EmptyState, Pagination, JobStatusBadge, ApplicationStatusBadge, Modal, Badge } from "@/components/ui"
 import { APPLICATION_STATUSES, APPLICATION_STATUS_LABELS } from "@/lib/constants"
-import { cx, formatDate, formatSalary } from "@/lib/format"
+import { formatDate, formatSalary } from "@/lib/format"
 import type { Job, RecruiterApplication } from "@/types"
 
 export default function JobDetail() {

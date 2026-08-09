@@ -7,7 +7,9 @@ const checkEligibility = (student, job) => {
   }
 
   const minimumCgpa = eligibility.minimumCgpa || 0
-  if (student.cgpa < minimumCgpa) {
+  if (minimumCgpa > 0 && student.cgpa == null) {
+    reasons.push("CGPA not available on profile")
+  } else if (student.cgpa < minimumCgpa) {
     reasons.push(`CGPA below required minimum of ${minimumCgpa}`)
   }
 

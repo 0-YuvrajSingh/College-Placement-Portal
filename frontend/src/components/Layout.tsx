@@ -27,13 +27,13 @@ interface NavItem {
 const NAV_BY_ROLE: Record<string, NavItem[]> = {
   student: [
     { to: "/dashboard", label: "Dashboard", icon: <LayoutDashboard size={17} />, exact: true },
-    { to: "/jobs", label: "Browse Jobs", icon: <Briefcase size={17} /> },
+    { to: "/jobs", label: "Opportunities", icon: <Briefcase size={17} /> },
     { to: "/applications", label: "My Applications", icon: <FileText size={17} /> },
-    { to: "/profile", label: "My Profile", icon: <UserIcon size={17} /> },
+    { to: "/profile", label: "Profile", icon: <UserIcon size={17} /> },
   ],
   recruiter: [
     { to: "/recruiter", label: "Dashboard", icon: <LayoutDashboard size={17} />, exact: true },
-    { to: "/recruiter/jobs", label: "My Job Postings", icon: <Briefcase size={17} /> },
+    { to: "/recruiter/jobs", label: "Job Postings", icon: <Briefcase size={17} /> },
     { to: "/recruiter/applications", label: "Applicants", icon: <Users size={17} /> },
     { to: "/recruiter/profile", label: "Company Profile", icon: <Building2 size={17} /> },
   ],
@@ -83,7 +83,7 @@ function NavLinks({ role }: { role: string }) {
 }
 
 function SidebarFooter() {
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   if (!user) return null
   return (
     <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
@@ -114,20 +114,6 @@ function Sidebar() {
         </button>
       </div>
     </aside>
-  )
-}
-
-function Topbar() {
-  const { user, logout } = useAuth()
-  return (
-    <header className="pf-topbar">
-      <div className="pf-topbar-title">PlaceForge</div>
-      {user && (
-        <button className="btn btn-outline btn-sm" onClick={() => void logout()}>
-          <LogOut size={14} /> Log out
-        </button>
-      )}
-    </header>
   )
 }
 
@@ -219,5 +205,3 @@ export default function Layout() {
     </div>
   )
 }
-
-export { Topbar }

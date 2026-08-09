@@ -91,6 +91,7 @@ export default function Dashboard() {
       { label: "Academic Details", done: !!(student?.department && student?.cgpa && student?.graduationYear) },
       { label: "Skills", done: !!student && student.skills.length > 0 },
       { label: "Resume Uploaded", done: !!student?.resume },
+      { label: "Work Experience", done: false },
     ],
     [student],
   )
@@ -122,7 +123,37 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {student && !student.profileCompleted && (
+        <div
+          className="pf-flex-center"
+          style={{
+            justifyContent: "space-between",
+            gap: 16,
+            flexWrap: "wrap",
+            padding: "12px 20px",
+            borderRadius: 8,
+            background: "var(--pf-teal-soft)",
+            border: "1px solid rgba(0,191,179,0.25)",
+            marginBottom: 20,
+          }}
+        >
+          <div className="pf-flex-center" style={{ justifyContent: "flex-start", gap: 10 }}>
+            <CheckCircle size={16} style={{ color: "var(--pf-teal)", flexShrink: 0 }} />
+            <span style={{ fontSize: 13, color: "var(--pf-text)", fontWeight: 600 }}>
+              Complete your profile to unlock eligible openings
+            </span>
+          </div>
+          <Link to="/profile" className="btn btn-primary btn-sm">
+            Complete profile <ArrowRight size={13} />
+          </Link>
+        </div>
+      )}
+
       <MetricStrip
+        containerStyle={{ padding: "24px 32px" }}
+        cellPadding="0 24px"
+        valueSize={24}
+        iconAlpha={15}
         items={[
           { label: "Eligible Openings", value: openings.length, icon: <Briefcase size={16} />, color: "var(--pf-teal)" },
           { label: "Applications Sent", value: apps.length, icon: <FileText size={16} />, color: "var(--pf-navy)" },
@@ -308,10 +339,10 @@ export default function Dashboard() {
             </div>
 
             <div className="card-section">
-              <div className="card-section-header">
-                <h2 className="pf-flex-center" style={{ gap: 6 }}>
+              <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--pf-border)" }}>
+                <span style={{ fontFamily: "Manrope", fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", gap: 6 }}>
                   <Clock size={14} style={{ color: "var(--pf-amber)" }} /> Upcoming Deadlines
-                </h2>
+                </span>
               </div>
               {closing.length === 0 ? (
                 <div className="card-section-body" style={{ color: "var(--pf-text-muted)", fontSize: 13 }}>

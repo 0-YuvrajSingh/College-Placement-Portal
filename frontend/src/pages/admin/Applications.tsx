@@ -17,7 +17,6 @@ export default function Applications() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [viewApp, setViewApp] = useState<AdminApplication | null>(null)
-  const [detail, setDetail] = useState<(AdminApplication & { studentProfile: unknown }) | null>(null)
 
   const load = useCallback(
     async (page = 1) => {
@@ -40,20 +39,12 @@ export default function Applications() {
     void load()
   }, [load])
 
-  const openDetail = async (app: AdminApplication) => {
+  const openDetail = (app: AdminApplication) => {
     setViewApp(app)
-    setDetail(null)
-    try {
-      const res = await adminApi.getApplication(app._id)
-      setDetail(res)
-    } catch {
-      setDetail(null)
-    }
   }
 
   if (loading && rows.length === 0) return <PageLoader label="Loading applications…" />
 
-  const studentProfile = detail && "studentProfile" in detail ? detail.studentProfile : null
   const history = viewApp?.statusHistory ?? []
   const latest = history[history.length - 1]
 

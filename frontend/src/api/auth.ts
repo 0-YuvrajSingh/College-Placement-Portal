@@ -11,6 +11,10 @@ export const authApi = {
     email: string
     password: string
     role: Role
+    department?: string
+    cgpa?: number
+    rollNumber?: string
+    companyName?: string
   }): Promise<AuthResponse> {
     return http.post<AuthResponse>("/auth/register", data)
   },

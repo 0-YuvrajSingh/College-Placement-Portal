@@ -3,8 +3,18 @@ const Student = require("../models/Student")
 const Recruiter = require("../models/Recruiter")
 const ApiError = require("../utils/ApiError")
 const generateToken = require("../utils/generateToken")
+const { ROLES } = require("../config/constants")
 
-const registerUser = async ({ name, email, password, role }) => {
+const registerUser = async ({
+  name,
+  email,
+  password,
+  role,
+  department,
+  cgpa,
+  rollNumber,
+  companyName,
+}) => {
   const existing = await User.findOne({ email })
   if (existing) {
     throw new ApiError(
@@ -15,6 +25,19 @@ const registerUser = async ({ name, email, password, role }) => {
   }
 
   const user = await User.create({ name, email, password, role })
+
+  // Create a partial role profile at signup; remaining fields are completed
+  // via the profile page (profileCompleted stays false until it is).
+  if (user.role === ROLES.STUDENT) {
+    const studentData = { user: user._id, name, email }
+    if (department) studentData.department = department
+    if (cgpa != null && cgpa !== "") studentData.cgpa = Number(cgpa)
+    if (rollNumber) studentData.rollNumber = rollNumber
+    await Student.create(studentData)
+  } else if (user.role === ROLES.RECRUITER && companyName) {
+    await Recruiter.create({ user: user._id, companyName })
+  }
+
   return user
 }
 

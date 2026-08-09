@@ -5,7 +5,7 @@ import { jobsApi } from "@/api/jobs"
 import { useAuth } from "@/context/AuthContext"
 import { useToast } from "@/context/ToastContext"
 import { ApiError } from "@/lib/api"
-import { Badge, EmptyState, JobStatusBadge, PageLoader } from "@/components/ui"
+import { EmptyState, JobStatusBadge, PageLoader } from "@/components/ui"
 import { formatDate, formatSalary, initials } from "@/lib/format"
 import type { Job } from "@/types"
 
@@ -87,8 +87,6 @@ export default function JobDetail() {
       />
     )
   }
-
-  const canApply = user?.role === "student" && !applied && isEligible !== false
 
   return (
     <>

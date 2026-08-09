@@ -47,12 +47,10 @@ const studentSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
-      required: [true, "Phone number is required"],
       match: [/^[0-9]{10,15}$/, "Phone number must be 10-15 digits"],
     },
     department: {
       type: String,
-      required: [true, "Department is required"],
       enum: DEPARTMENTS,
     },
     rollNumber: {
@@ -83,7 +81,6 @@ const studentSchema = new mongoose.Schema(
     },
     year: {
       type: Number,
-      required: [true, "Year is required"],
       enum: [1, 2, 3, 4],
     },
     skills: {
@@ -92,13 +89,11 @@ const studentSchema = new mongoose.Schema(
     },
     cgpa: {
       type: Number,
-      required: [true, "CGPA is required"],
       min: [0, "CGPA cannot be less than 0"],
       max: [10, "CGPA cannot exceed 10"],
     },
     semester: {
       type: Number,
-      required: [true, "Semester is required"],
       min: [1, "Semester must be at least 1"],
       max: [8, "Semester cannot exceed 8"],
     },
