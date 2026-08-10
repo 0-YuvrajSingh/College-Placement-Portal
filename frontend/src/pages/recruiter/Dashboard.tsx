@@ -5,12 +5,15 @@ import { recruiterApi } from "@/api/recruiter"
 import { useAuth } from "@/context/AuthContext"
 import { ApiError } from "@/lib/api"
 import { ApplicationStatusBadge, EmptyState, JobStatusBadge, MetricStrip, PageLoader } from "@/components/ui"
+import PendingApproval from "@/components/PendingApproval"
+import { useRecruiterApproval } from "@/hooks/useRecruiterApproval"
 import { formatDate, formatSalary, initials, isClosingSoon } from "@/lib/format"
 import type { Job, RecruiterApplication, RecruiterProfile, RecruiterStats } from "@/types"
 
 export default function Dashboard() {
   const navigate = useNavigate()
   const { profile } = useAuth()
+  const { pending } = useRecruiterApproval()
   const [stats, setStats] = useState<RecruiterStats | null>(null)
   const [jobs, setJobs] = useState<(Job & { applicantCount: number })[]>([])
   const [apps, setApps] = useState<RecruiterApplication[]>([])
@@ -18,6 +21,10 @@ export default function Dashboard() {
   const [error, setError] = useState("")
 
   const load = useCallback(async () => {
+    if (pending) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
     setError("")
     try {
@@ -34,11 +41,13 @@ export default function Dashboard() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [pending])
 
   useEffect(() => {
     void load()
   }, [load])
+
+  if (pending) return <PendingApproval />
 
   if (loading) return <PageLoader label="Loading your dashboard…" />
   if (error) {

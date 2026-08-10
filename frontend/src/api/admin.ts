@@ -3,6 +3,7 @@ import type {
   AdminApplication,
   AdminStats,
   AdminUserRow,
+  AuditLogEntry,
   Job,
   JobStatus,
   PublicStats,
@@ -98,6 +99,15 @@ export const adminApi = {
 
   applicationResume(id: string, filename?: string) {
     return downloadWithAuth(`/admin/applications/${id}/resume`, filename || "resume")
+  },
+
+  listAuditLogs(filters: { action?: string; page?: number; limit?: number }) {
+    const params: Record<string, string | number | undefined> = {
+      action: filters.action || undefined,
+      page: filters.page || 1,
+      limit: filters.limit || 25,
+    }
+    return http.getPage<AuditLogEntry[]>("/admin/audit-logs", { params })
   },
 }
 

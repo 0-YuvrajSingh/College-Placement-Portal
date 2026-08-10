@@ -27,6 +27,7 @@ import AdminStudents from "@/pages/admin/Students"
 import AdminRecruiters from "@/pages/admin/Recruiters"
 import AdminJobs from "@/pages/admin/Jobs"
 import AdminApplications from "@/pages/admin/Applications"
+import AdminAuditLogs from "@/pages/admin/AuditLogs"
 
 export default function App() {
   return (
@@ -92,6 +93,7 @@ export default function App() {
               <Route path="/admin/recruiters" element={<AdminRecruiters />} />
               <Route path="/admin/jobs" element={<AdminJobs />} />
               <Route path="/admin/applications" element={<AdminApplications />} />
+              <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

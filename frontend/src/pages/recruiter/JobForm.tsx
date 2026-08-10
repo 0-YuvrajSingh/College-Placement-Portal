@@ -5,6 +5,8 @@ import { recruiterApi, type JobPayload } from "@/api/recruiter"
 import { useToast } from "@/context/ToastContext"
 import { ApiError } from "@/lib/api"
 import { Field, SkillInput, Spinner } from "@/components/ui"
+import PendingApproval from "@/components/PendingApproval"
+import { useRecruiterApproval } from "@/hooks/useRecruiterApproval"
 import { DEPARTMENTS, EMPLOYMENT_TYPES, GRADUATION_YEARS, WORK_MODES } from "@/lib/constants"
 import type { Job } from "@/types"
 
@@ -81,11 +83,12 @@ export default function JobForm({ mode }: { mode: "create" | "edit" }) {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { success, error: toastError } = useToast()
+  const { pending } = useRecruiterApproval()
   const [form, setForm] = useState<FormState | null>(mode === "edit" ? null : EMPTY_FORM)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (mode !== "edit" || !id || form !== null) return
+    if (mode !== "edit" || !id || form !== null || pending) return
     let active = true
     recruiterApi
       .getJob(id)
@@ -101,7 +104,9 @@ export default function JobForm({ mode }: { mode: "create" | "edit" }) {
     return () => {
       active = false
     }
-  }, [mode, id, form, navigate, toastError])
+  }, [mode, id, form, navigate, toastError, pending])
+
+  if (pending) return <PendingApproval />
 
   if (!form) return null
 

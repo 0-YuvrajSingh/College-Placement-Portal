@@ -5,6 +5,8 @@ import { recruiterApi } from "@/api/recruiter"
 import { useToast } from "@/context/ToastContext"
 import { ApiError } from "@/lib/api"
 import { PageHeader, PageLoader, EmptyState, Pagination, JobStatusBadge, ApplicationStatusBadge, Modal, Badge } from "@/components/ui"
+import PendingApproval from "@/components/PendingApproval"
+import { useRecruiterApproval } from "@/hooks/useRecruiterApproval"
 import { APPLICATION_STATUSES, APPLICATION_STATUS_LABELS } from "@/lib/constants"
 import { formatDate, formatSalary } from "@/lib/format"
 import type { Job, RecruiterApplication } from "@/types"
@@ -13,6 +15,7 @@ export default function JobDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { success, error: toastError } = useToast()
+  const { pending } = useRecruiterApproval()
   const [job, setJob] = useState<Job | null>(null)
   const [applications, setApplications] = useState<RecruiterApplication[]>([])
   const [totalPages, setTotalPages] = useState(0)
@@ -77,6 +80,8 @@ export default function JobDetail() {
       setDeleting(false)
     }
   }
+
+  if (pending) return <PendingApproval />
 
   if (loading) return <PageLoader label="Loading job…" />
   if (notFound || !job) {

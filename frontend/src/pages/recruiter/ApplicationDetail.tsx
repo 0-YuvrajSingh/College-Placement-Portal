@@ -5,18 +5,25 @@ import { recruiterApi } from "@/api/recruiter"
 import { ApiError } from "@/lib/api"
 import StatusActions from "@/components/StatusActions"
 import { ApplicationStatusBadge, EmptyState, PageLoader } from "@/components/ui"
+import PendingApproval from "@/components/PendingApproval"
+import { useRecruiterApproval } from "@/hooks/useRecruiterApproval"
 import { formatDate, initials } from "@/lib/format"
 import type { ApplicationStatus, RecruiterApplication } from "@/types"
 
 export default function ApplicationDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { pending } = useRecruiterApproval()
   const [app, setApp] = useState<RecruiterApplication | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
   const load = useCallback(async () => {
     if (!id) return
+    if (pending) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
     setError("")
     try {
@@ -27,11 +34,13 @@ export default function ApplicationDetail() {
     } finally {
       setLoading(false)
     }
-  }, [id])
+  }, [id, pending])
 
   useEffect(() => {
     void load()
   }, [load])
+
+  if (pending) return <PendingApproval />
 
   if (loading) return <PageLoader label="Loading application…" />
   if (!app) {

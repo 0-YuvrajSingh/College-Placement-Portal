@@ -233,6 +233,25 @@ export interface AdminUserRow {
   jobCount?: number
 }
 
+export interface AuditChange {
+  field: string
+  before: unknown
+  after: unknown
+}
+
+export interface AuditLogEntry {
+  _id: string
+  actor: { _id: string; name: string; email: string; role: Role } | null
+  actorRole: Role
+  action: string
+  targetType: string
+  targetId: string | null
+  description: string
+  changes: AuditChange[]
+  ip: string
+  createdAt: string
+}
+
 export interface JobDetailPayload {
   job: Job
   isEligible: boolean | null

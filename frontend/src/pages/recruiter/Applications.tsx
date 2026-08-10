@@ -6,6 +6,8 @@ import { ApiError } from "@/lib/api"
 import { useDebouncedValue } from "@/hooks/useDebounce"
 import { APPLICATION_STATUSES, APPLICATION_STATUS_LABELS } from "@/lib/constants"
 import { ApplicationStatusBadge, PageLoader, Pagination } from "@/components/ui"
+import PendingApproval from "@/components/PendingApproval"
+import { useRecruiterApproval } from "@/hooks/useRecruiterApproval"
 import { cx, formatDate, initials } from "@/lib/format"
 import type { ApplicationStatus, RecruiterApplication } from "@/types"
 
@@ -13,6 +15,7 @@ const QUICK_STATUSES: ApplicationStatus[] = ["SHORTLISTED", "SELECTED", "REJECTE
 
 export default function Applications() {
   const navigate = useNavigate()
+  const { pending } = useRecruiterApproval()
   const [apps, setApps] = useState<RecruiterApplication[]>([])
   const [pagination, setPagination] = useState<{ page: number; totalPages: number }>({ page: 1, totalPages: 1 })
   const [jobs, setJobs] = useState<{ _id: string; title: string }[]>([])
@@ -24,6 +27,10 @@ export default function Applications() {
   const [error, setError] = useState("")
 
   const load = useCallback(async (page = 1) => {
+    if (pending) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
     setError("")
     try {
@@ -41,7 +48,7 @@ export default function Applications() {
     } finally {
       setLoading(false)
     }
-  }, [status, jobId, debouncedSearch])
+  }, [status, jobId, debouncedSearch, pending])
 
   useEffect(() => {
     void load()
@@ -62,6 +69,8 @@ export default function Applications() {
       setError(err instanceof ApiError ? err.message : "Could not update status")
     }
   }
+
+  if (pending) return <PendingApproval />
 
   if (loading && apps.length === 0) return <PageLoader label="Loading applicants…" />
 

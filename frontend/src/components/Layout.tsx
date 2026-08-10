@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom"
 import { Outlet } from "react-router-dom"
 import {
+  Activity,
   Briefcase,
   Building2,
   FileText,
@@ -43,6 +44,7 @@ const NAV_BY_ROLE: Record<string, NavItem[]> = {
     { to: "/admin/recruiters", label: "Recruiters", icon: <Building2 size={17} /> },
     { to: "/admin/jobs", label: "Jobs", icon: <Briefcase size={17} /> },
     { to: "/admin/applications", label: "Applications", icon: <FileText size={17} /> },
+    { to: "/admin/audit-logs", label: "Audit Logs", icon: <Activity size={17} /> },
   ],
 }
 
@@ -63,8 +65,13 @@ function Brand() {
   )
 }
 
-function NavLinks({ role }: { role: string }) {
-  const items = NAV_BY_ROLE[role] || []
+function NavLinks({ role, pending }: { role: string; pending: boolean }) {
+  const items = (NAV_BY_ROLE[role] || []).filter((item) => {
+    if (!pending) return true
+    // Pending recruiters only see their dashboard and company profile;
+    // recruitment operations are disabled until the placement office approves.
+    return item.to === "/recruiter" || item.to === "/recruiter/profile"
+  })
   return (
     <nav className="pf-nav" aria-label="Primary">
       {items.map((item) => (
@@ -83,8 +90,13 @@ function NavLinks({ role }: { role: string }) {
 }
 
 function SidebarFooter() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   if (!user) return null
+  const pending =
+    user.role === "recruiter" &&
+    !!profile &&
+    "isApproved" in profile &&
+    profile.isApproved === false
   return (
     <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
       <div className="pf-user-card">
@@ -93,7 +105,10 @@ function SidebarFooter() {
           <div className="pf-user-name" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {user.name}
           </div>
-          <div className="pf-user-role">{ROLE_LABELS[user.role]}</div>
+          <div className="pf-user-role">
+            {ROLE_LABELS[user.role]}
+            {pending && " · Pending approval"}
+          </div>
         </div>
       </div>
     </div>
@@ -101,13 +116,18 @@ function SidebarFooter() {
 }
 
 function Sidebar() {
-  const { user, logout } = useAuth()
+  const { user, logout, profile } = useAuth()
   if (!user) return null
+  const pending =
+    user.role === "recruiter" &&
+    !!profile &&
+    "isApproved" in profile &&
+    profile.isApproved === false
   return (
     <aside className="pf-sidebar">
       <Brand />
       <SidebarFooter />
-      <NavLinks role={user.role} />
+      <NavLinks role={user.role} pending={pending} />
       <div className="pf-sidebar-footer">
         <button className="btn btn-translucent btn-sm" style={{ width: "100%" }} onClick={() => void logout()}>
           <LogOut size={14} /> Log out
@@ -119,8 +139,13 @@ function Sidebar() {
 
 function MobileHeader() {
   const [open, setOpen] = useState(false)
-  const { user, logout } = useAuth()
+  const { user, logout, profile } = useAuth()
   const location = useLocation()
+  const pending =
+    user?.role === "recruiter" &&
+    !!profile &&
+    "isApproved" in profile &&
+    profile.isApproved === false
   const label = NAV_BY_ROLE[user?.role || ""]?.find((i) =>
     i.exact ? location.pathname === i.to : location.pathname.startsWith(i.to),
   )?.label
@@ -170,7 +195,7 @@ function MobileHeader() {
                 <X size={18} />
               </button>
             </div>
-            <NavLinks role={user?.role || ""} />
+            <NavLinks role={user?.role || ""} pending={pending} />
             <div className="pf-sidebar-footer">
               {user && (
                 <button

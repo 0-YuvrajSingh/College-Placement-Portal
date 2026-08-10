@@ -5,6 +5,8 @@ import { recruiterApi } from "@/api/recruiter"
 import { ApiError } from "@/lib/api"
 import { useDebouncedValue } from "@/hooks/useDebounce"
 import { JobStatusBadge, Modal } from "@/components/ui"
+import PendingApproval from "@/components/PendingApproval"
+import { useRecruiterApproval } from "@/hooks/useRecruiterApproval"
 import { cx, formatDate, formatSalary, isClosingSoon } from "@/lib/format"
 import type { Job, JobStatus } from "@/types"
 
@@ -21,6 +23,7 @@ type SortKey = (typeof SORTS)[number]
 
 export default function Jobs() {
   const navigate = useNavigate()
+  const { pending } = useRecruiterApproval()
   const [jobs, setJobs] = useState<(Job & { applicantCount: number })[]>([])
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebouncedValue(search, 350)
@@ -33,6 +36,10 @@ export default function Jobs() {
   const [busy, setBusy] = useState(false)
 
   const load = useCallback(async () => {
+    if (pending) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
     setError("")
     try {
@@ -43,7 +50,7 @@ export default function Jobs() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [pending])
 
   useEffect(() => {
     void load()
@@ -74,6 +81,8 @@ export default function Jobs() {
     }
     return sorted
   }, [jobs, debouncedSearch, statusTab, sort])
+
+  if (pending) return <PendingApproval />
 
   const runConfirm = async () => {
     if (!targetJob || !confirmAction) return
