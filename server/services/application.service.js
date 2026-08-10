@@ -4,6 +4,7 @@ const Job = require("../models/Job")
 const ApiError = require("../utils/ApiError")
 const { checkEligibility } = require("./eligibility.service")
 const { normalizeExpiredJobs } = require("./job.service")
+const { snapshotResumeFile, deleteResumeFile } = require("./file.service")
 const {
   APPLICATION_STATUS,
   APPLICATION_TRANSITIONS,
@@ -65,25 +66,53 @@ const applyToJob = async ({ studentUser, jobId }) => {
     )
   }
 
-  const application = await Application.create({
-    student: studentUser._id,
-    job: job._id,
-    recruiter: job.recruiter,
-    resumeSnapshot: {
-      originalName: student.resume.originalname,
-      storedName: student.resume.filename,
-      mimeType: student.resume.mimetype,
-      size: student.resume.size,
-    },
-    status: APPLICATION_STATUS.APPLIED,
-    statusHistory: [
-      {
-        status: APPLICATION_STATUS.APPLIED,
-        changedBy: studentUser._id,
-        remarks: "Application submitted",
+  // Copy the submitted resume into an immutable snapshot. The snapshot is kept
+  // for the lifetime of the application (a withdrawn application is still a
+  // historical record), so later resume replacements on the student profile do
+  // not break downloads of the resume that was actually submitted.
+  const snapshotName = await snapshotResumeFile(student.resume.filename)
+  if (!snapshotName) {
+    throw new ApiError(
+      400,
+      "Upload a resume before applying",
+      "RESUME_REQUIRED",
+    )
+  }
+
+  let application
+  try {
+    application = await Application.create({
+      student: studentUser._id,
+      job: job._id,
+      recruiter: job.recruiter,
+      resumeSnapshot: {
+        originalName: student.resume.originalname,
+        storedName: snapshotName,
+        mimeType: student.resume.mimetype,
+        size: student.resume.size,
       },
-    ],
-  })
+      status: APPLICATION_STATUS.APPLIED,
+      statusHistory: [
+        {
+          status: APPLICATION_STATUS.APPLIED,
+          changedBy: studentUser._id,
+          remarks: "Application submitted",
+        },
+      ],
+    })
+  } catch (err) {
+    await deleteResumeFile(snapshotName)
+    if (err && err.code === 11000) {
+      // Two concurrent requests both passed the findOne() above; the compound
+      // unique index on { student, job } caught the race.
+      throw new ApiError(
+        409,
+        "You have already applied to this job",
+        "ALREADY_APPLIED",
+      )
+    }
+    throw err
+  }
 
   return application
 }

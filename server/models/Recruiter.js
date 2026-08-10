@@ -47,7 +47,7 @@ const recruiterSchema = new mongoose.Schema(
     },
     isApproved: {
       type: Boolean,
-      default: true,
+      default: false,
     },
   },
   {

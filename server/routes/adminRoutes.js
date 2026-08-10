@@ -45,4 +45,6 @@ router.get("/applications", adminController.listApplications)
 router.get("/applications/:id", adminController.getApplication)
 router.get("/applications/:id/resume", adminController.getApplicationResume)
 
+router.get("/audit-logs", adminController.getAuditLogs)
+
 module.exports = router

@@ -398,12 +398,12 @@ const getApplicationResume = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Application not found", "APPLICATION_NOT_FOUND")
   }
 
-  const student = await Student.findOne({ user: application.student })
-  if (!student || !student.resume) {
+  const snapshot = application.resumeSnapshot
+  if (!snapshot || !snapshot.storedName) {
     throw new ApiError(404, "Resume not found", "RESUME_NOT_FOUND")
   }
 
-  sendResumeFile(res, student.resume.filename, student.resume.originalname)
+  sendResumeFile(res, snapshot.storedName, snapshot.originalName)
 })
 
 module.exports = {

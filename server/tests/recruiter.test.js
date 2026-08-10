@@ -1,5 +1,6 @@
 const request = require("supertest")
 const app = require("../app")
+const Recruiter = require("../models/Recruiter")
 const {
   createRecruiter,
   createJob,
@@ -129,6 +130,70 @@ describe("Recruiter profile & jobs", () => {
       .set(authHeader(rres.body.data.token))
     expect(del.status).toBe(400)
     expect(del.body.code).toBe("JOB_HAS_APPLICATIONS")
+  })
+})
+
+describe("Recruiter approval gating", () => {
+  it("blocks an unapproved recruiter from creating jobs", async () => {
+    const rec = await createRecruiter({ email: "approve-pend@test.com", isApproved: false })
+    const res = await login(rec.user.email)
+    const created = await request(app)
+      .post("/api/recruiter/jobs")
+      .set(authHeader(res.body.data.token))
+      .send({
+        title: "Pending Job",
+        description: "Should not create",
+        companyName: "Test Corp",
+        applicationDeadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+      })
+    expect(created.status).toBe(403)
+    expect(created.body.code).toBe("RECRUITER_NOT_APPROVED")
+  })
+
+  it("allows an approved recruiter to create jobs", async () => {
+    const rec = await createRecruiter({ email: "approve-ok@test.com", isApproved: true })
+    const res = await login(rec.user.email)
+    const created = await request(app)
+      .post("/api/recruiter/jobs")
+      .set(authHeader(res.body.data.token))
+      .send({
+        title: "Approved Job",
+        description: "Should create",
+        companyName: "Test Corp",
+        applicationDeadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+      })
+    expect(created.status).toBe(201)
+  })
+
+  it("unapproved recruiters can still read their own profile", async () => {
+    const rec = await createRecruiter({ email: "approve-pro@test.com", isApproved: false })
+    const res = await login(rec.user.email)
+    const profile = await request(app)
+      .get("/api/recruiter/profile")
+      .set(authHeader(res.body.data.token))
+    expect(profile.status).toBe(200)
+    expect(profile.body.data.profile.isApproved).toBe(false)
+  })
+
+  it("unapproved recruiters cannot update application statuses", async () => {
+    const rec = await createRecruiter({ email: "approve-app@test.com", isApproved: true })
+    const job = await createJob(rec.user._id, { status: "OPEN" })
+    const student = await createStudent({ email: "approve-st@test.edu", cgpa: 9 })
+    const sres = await login(student.user.email)
+    await addResume(sres.body.data.token)
+    const applied = await request(app)
+      .post(`/api/jobs/${job._id}/apply`)
+      .set(authHeader(sres.body.data.token))
+    const appId = applied.body.data.application._id
+
+    await Recruiter.updateOne({ user: rec.user._id }, { isApproved: false })
+    const rres = await login(rec.user.email)
+    const update = await request(app)
+      .patch(`/api/recruiter/applications/${appId}/status`)
+      .set(authHeader(rres.body.data.token))
+      .send({ status: "SHORTLISTED" })
+    expect(update.status).toBe(403)
+    expect(update.body.code).toBe("RECRUITER_NOT_APPROVED")
   })
 })
 

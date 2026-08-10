@@ -1,5 +1,6 @@
 const request = require("supertest")
 const app = require("../app")
+const User = require("../models/User")
 const { createUser, createStudent, login, authHeader } = require("./helpers")
 
 describe("Student profile", () => {
@@ -68,6 +69,32 @@ describe("Student profile", () => {
     expect(bad.status).toBe(422)
     expect(bad.body.code).toBe("VALIDATION_ERROR")
   })
+
+  it("syncs name and email changes to the User account", async () => {
+    await createStudent({ email: "sync@test.edu" })
+    const res = await login("sync@test.edu")
+    const updated = await request(app)
+      .put("/api/students/me/profile")
+      .set(authHeader(res.body.data.token))
+      .send({ name: "Renamed Student", email: "renamed@test.edu" })
+    expect(updated.status).toBe(200)
+
+    const user = await User.findOne({ email: "renamed@test.edu" }).lean()
+    expect(user).not.toBeNull()
+    expect(user.name).toBe("Renamed Student")
+  })
+
+  it("rejects an email already used by another account", async () => {
+    await createStudent({ email: "owner@test.edu" })
+    const { user } = await createStudent({ email: "would-be@test.edu" })
+    const res = await login(user.email)
+    const updated = await request(app)
+      .put("/api/students/me/profile")
+      .set(authHeader(res.body.data.token))
+      .send({ email: "owner@test.edu" })
+    expect(updated.status).toBe(409)
+    expect(updated.body.code).toBe("EMAIL_TAKEN")
+  })
 })
 
 describe("Student resume", () => {
@@ -102,6 +129,28 @@ describe("Student resume", () => {
       .set(authHeader(res.body.data.token))
       .attach("resume", Buffer.from("MZ definitely not a pdf"), "evil.exe")
     expect(upload.status).toBe(400)
+  })
+
+  it("rejects a file named .pdf whose magic bytes are not a PDF", async () => {
+    await createStudent({ email: "magic@test.edu" })
+    const res = await login("magic@test.edu")
+    const upload = await request(app)
+      .post("/api/students/me/resume")
+      .set(authHeader(res.body.data.token))
+      .attach("resume", Buffer.from("Not really a PDF document"), "fake.pdf")
+    expect(upload.status).toBe(400)
+    expect(upload.body.code).toBe("INVALID_RESUME_FILE")
+  })
+
+  it("rejects a file named .docx that is not a real Word package", async () => {
+    await createStudent({ email: "docxmagic@test.edu" })
+    const res = await login("docxmagic@test.edu")
+    const upload = await request(app)
+      .post("/api/students/me/resume")
+      .set(authHeader(res.body.data.token))
+      .attach("resume", Buffer.from("PK not an office archive at all"), "fake.docx")
+    expect(upload.status).toBe(400)
+    expect(upload.body.code).toBe("INVALID_RESUME_FILE")
   })
 
   it("rejects oversized uploads", async () => {

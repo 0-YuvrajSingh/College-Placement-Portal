@@ -22,14 +22,37 @@ const normalizeExpiredJobs = async () => {
   )
 }
 
+// Builds the eligible=true query filter so it mirrors checkEligibility() in
+// eligibility.service.js: a job is excluded when the student LACKS a field the
+// job requires, and a job with no restriction on a dimension passes regardless
+// of whether the student filled that field in.
 const buildEligibilityFilter = (student) => {
+  if (!student) return []
+
   const conditions = []
-  if (student && student.cgpa != null) {
-    conditions.push({ "eligibility.minimumCgpa": { $lte: student.cgpa } })
-  }
-  if (student && student.department) {
+
+  // CGPA — missing student CGPA only matters when a job enforces a minimum.
+  if (student.cgpa == null) {
     conditions.push({
       $or: [
+        { "eligibility.minimumCgpa": { $exists: false } },
+        { "eligibility.minimumCgpa": { $lte: 0 } },
+      ],
+    })
+  } else {
+    conditions.push({
+      $or: [
+        { "eligibility.minimumCgpa": { $exists: false } },
+        { "eligibility.minimumCgpa": { $lte: student.cgpa } },
+      ],
+    })
+  }
+
+  // Department
+  if (student.department) {
+    conditions.push({
+      $or: [
+        { "eligibility.eligibleDepartments": { $exists: false } },
         { "eligibility.eligibleDepartments": { $size: 0 } },
         {
           "eligibility.eligibleDepartments": {
@@ -38,26 +61,58 @@ const buildEligibilityFilter = (student) => {
         },
       ],
     })
-  }
-  if (student && student.graduationYear) {
+  } else {
     conditions.push({
       $or: [
+        { "eligibility.eligibleDepartments": { $exists: false } },
+        { "eligibility.eligibleDepartments": { $size: 0 } },
+      ],
+    })
+  }
+
+  // Graduation year
+  if (student.graduationYear != null) {
+    conditions.push({
+      $or: [
+        { "eligibility.eligibleGraduationYears": { $exists: false } },
         { "eligibility.eligibleGraduationYears": { $size: 0 } },
         { "eligibility.eligibleGraduationYears": student.graduationYear },
       ],
     })
+  } else {
+    conditions.push({
+      $or: [
+        { "eligibility.eligibleGraduationYears": { $exists: false } },
+        { "eligibility.eligibleGraduationYears": { $size: 0 } },
+      ],
+    })
   }
-  if (student && student.hasActiveBacklogs) {
-    conditions.push({ "eligibility.backlogAllowed": true })
-  }
-  if (student && Array.isArray(student.skills) && student.skills.length > 0) {
-    const skills = student.skills.map((s) => new RegExp(`^${escapeRegExp(s)}$`, "i"))
+
+  // Required skills — a student with no skills is only excluded by jobs that
+  // actually require skills.
+  if (Array.isArray(student.skills) && student.skills.length > 0) {
+    const skills = student.skills.map(
+      (s) => new RegExp(`^${escapeRegExp(s)}$`, "i"),
+    )
     conditions.push({
       "eligibility.requiredSkills": {
         $not: { $elemMatch: { $nin: skills } },
       },
     })
+  } else {
+    conditions.push({
+      $or: [
+        { "eligibility.requiredSkills": { $exists: false } },
+        { "eligibility.requiredSkills": { $size: 0 } },
+      ],
+    })
   }
+
+  // Backlogs — only matters when a student has active backlogs.
+  if (student.hasActiveBacklogs) {
+    conditions.push({ "eligibility.backlogAllowed": { $ne: false } })
+  }
+
   return conditions
 }
 

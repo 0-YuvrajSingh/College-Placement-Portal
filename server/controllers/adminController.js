@@ -9,8 +9,11 @@ const { parsePagination, buildPagination } = require("../utils/pagination")
 const { ROLES, JOB_STATUS } = require("../config/constants")
 const adminService = require("../services/admin.service")
 const { sendResumeFile } = require("../services/file.service")
+const { writeAudit, diffChanges, listAuditLogs } = require("../services/audit.service")
 
 const USER_SELECT = "name email role isActive lastLoginAt createdAt updatedAt"
+
+const auditIp = (req) => req.headers["x-forwarded-for"] || req.socket?.remoteAddress || ""
 
 // @desc    Get dashboard statistics
 // @route   GET /api/admin/dashboard
@@ -93,21 +96,55 @@ const getStudent = asyncHandler(async (req, res) => {
 // @desc    Activate/deactivate a student
 // @route   PATCH /api/admin/students/:id/status
 const updateStudentStatus = asyncHandler(async (req, res) => {
+  const before = await User.findOne({
+    _id: req.params.id,
+    role: ROLES.STUDENT,
+  })
+    .select("isActive")
+    .lean()
+  if (!before) {
+    throw new ApiError(404, "Student not found", "USER_NOT_FOUND")
+  }
+
   const user = await User.findOneAndUpdate(
     { _id: req.params.id, role: ROLES.STUDENT },
     { isActive: req.body.isActive },
     { new: true, runValidators: true },
   ).select(USER_SELECT)
-  if (!user) {
-    throw new ApiError(404, "Student not found", "USER_NOT_FOUND")
-  }
+
+  const changes = diffChanges(
+    { isActive: before.isActive },
+    { isActive: user.isActive },
+  )
 
   if (req.body.isPlaced !== undefined) {
+    const studentBefore = await Student.findOne({
+      user: req.params.id,
+    })
+      .select("isPlaced")
+      .lean()
     await Student.updateOne(
       { user: req.params.id },
       { isPlaced: req.body.isPlaced },
     )
+    changes.push(
+      ...diffChanges(
+        { isPlaced: studentBefore?.isPlaced },
+        { isPlaced: req.body.isPlaced },
+      ),
+    )
   }
+
+  await writeAudit({
+    actor: req.user._id,
+    actorRole: req.user.role,
+    action: "student.status_changed",
+    targetType: "student",
+    targetId: user._id,
+    description: `Student ${user.name} ${user.isActive ? "activated" : "deactivated"}`,
+    changes,
+    ip: auditIp(req),
+  })
 
   res.json({ success: true, data: { user } })
 })
@@ -184,6 +221,16 @@ const getRecruiter = asyncHandler(async (req, res) => {
 // @desc    Activate/deactivate a recruiter
 // @route   PATCH /api/admin/recruiters/:id/status
 const updateRecruiterStatus = asyncHandler(async (req, res) => {
+  const before = await User.findOne({
+    _id: req.params.id,
+    role: ROLES.RECRUITER,
+  })
+    .select("isActive")
+    .lean()
+  if (!before) {
+    throw new ApiError(404, "Recruiter not found", "USER_NOT_FOUND")
+  }
+
   const updates = {}
   if (req.body.isActive !== undefined) {
     updates.isActive = req.body.isActive
@@ -193,16 +240,40 @@ const updateRecruiterStatus = asyncHandler(async (req, res) => {
     updates,
     { new: true, runValidators: true },
   ).select(USER_SELECT)
-  if (!user) {
-    throw new ApiError(404, "Recruiter not found", "USER_NOT_FOUND")
-  }
+
+  const changes = diffChanges(
+    { isActive: before.isActive },
+    { isActive: user.isActive },
+  )
 
   if (req.body.isApproved !== undefined) {
+    const recruiterBefore = await Recruiter.findOne({
+      user: req.params.id,
+    })
+      .select("isApproved")
+      .lean()
     await Recruiter.updateOne(
       { user: req.params.id },
       { isApproved: req.body.isApproved },
     )
+    changes.push(
+      ...diffChanges(
+        { isApproved: recruiterBefore?.isApproved },
+        { isApproved: req.body.isApproved },
+      ),
+    )
   }
+
+  await writeAudit({
+    actor: req.user._id,
+    actorRole: req.user.role,
+    action: "recruiter.status_changed",
+    targetType: "recruiter",
+    targetId: user._id,
+    description: `Recruiter ${user.name} updated (active: ${user.isActive})`,
+    changes,
+    ip: auditIp(req),
+  })
 
   res.json({ success: true, data: { user } })
 })
@@ -274,14 +345,28 @@ const updateJobStatus = asyncHandler(async (req, res) => {
       "INVALID_STATUS",
     )
   }
+  const before = await Job.findById(req.params.id).select("status title").lean()
+  if (!before) {
+    throw new ApiError(404, "Job not found", "JOB_NOT_FOUND")
+  }
+
   const job = await Job.findByIdAndUpdate(
     req.params.id,
     { status: req.body.status },
     { new: true, runValidators: true },
   )
-  if (!job) {
-    throw new ApiError(404, "Job not found", "JOB_NOT_FOUND")
-  }
+
+  await writeAudit({
+    actor: req.user._id,
+    actorRole: req.user.role,
+    action: "job.status_changed",
+    targetType: "job",
+    targetId: job._id,
+    description: `Job "${job.title}" status changed`,
+    changes: diffChanges({ status: before.status }, { status: job.status }),
+    ip: auditIp(req),
+  })
+
   res.json({ success: true, data: { job } })
 })
 
@@ -347,11 +432,32 @@ const getApplicationResume = asyncHandler(async (req, res) => {
   if (!application) {
     throw new ApiError(404, "Application not found", "APPLICATION_NOT_FOUND")
   }
-  const student = await Student.findOne({ user: application.student })
-  if (!student || !student.resume) {
+
+  const snapshot = application.resumeSnapshot
+  if (!snapshot || !snapshot.storedName) {
     throw new ApiError(404, "Resume not found", "RESUME_NOT_FOUND")
   }
-  sendResumeFile(res, student.resume.filename, student.resume.originalname)
+
+  sendResumeFile(res, snapshot.storedName, snapshot.originalName)
+})
+
+// @desc    List audit log entries
+// @route   GET /api/admin/audit-logs
+const getAuditLogs = asyncHandler(async (req, res) => {
+  const { page, limit, skip } = parsePagination(req.query)
+  const { logs, total } = await listAuditLogs({
+    page,
+    limit,
+    skip,
+    action: req.query.action || undefined,
+    targetType: req.query.targetType || undefined,
+    actorId: req.query.actorId || undefined,
+  })
+  res.json({
+    success: true,
+    data: logs,
+    pagination: buildPagination(page, limit, total),
+  })
 })
 
 module.exports = {
@@ -368,4 +474,5 @@ module.exports = {
   listApplications,
   getApplication,
   getApplicationResume,
+  getAuditLogs,
 }

@@ -140,6 +140,38 @@ describe("Admin", () => {
     expect(list.body.data.length).toBe(1)
     expect(list.body.data[0].studentProfile.isPlaced).toBe(true)
   })
+
+  it("records admin actions in the audit log", async () => {
+    const student = await createStudent({ email: "adm-audit@test.edu" })
+
+    await request(app)
+      .patch(`/api/admin/students/${student.user._id}/status`)
+      .set(authHeader(adminToken))
+      .send({ isActive: false })
+
+    const logs = await request(app)
+      .get("/api/admin/audit-logs")
+      .set(authHeader(adminToken))
+    expect(logs.status).toBe(200)
+    expect(logs.body.data.length).toBe(1)
+
+    const entry = logs.body.data[0]
+    expect(entry.action).toBe("student.status_changed")
+    expect(entry.targetType).toBe("student")
+    expect(entry.actor.name).toBe("Test Admin")
+    const activeChange = entry.changes.find((c) => c.field === "isActive")
+    expect(activeChange.before).toBe(true)
+    expect(activeChange.after).toBe(false)
+  })
+
+  it("requires admin role to read audit logs", async () => {
+    const student = await createStudent({ email: "adm-audit-s@test.edu" })
+    const res = await login(student.user.email)
+    const attempt = await request(app)
+      .get("/api/admin/audit-logs")
+      .set(authHeader(res.body.data.token))
+    expect(attempt.status).toBe(403)
+  })
 })
 
 describe("Public stats", () => {

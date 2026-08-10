@@ -10,8 +10,8 @@ const registerValidators = [
     .withMessage("Name cannot exceed 50 characters"),
   body("email").isEmail().withMessage("Please provide a valid email address"),
   body("password")
-    .isLength({ min: 6 })
-    .withMessage("Password must be at least 6 characters")
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters")
     .isLength({ max: 100 })
     .withMessage("Password cannot exceed 100 characters"),
   body("role")

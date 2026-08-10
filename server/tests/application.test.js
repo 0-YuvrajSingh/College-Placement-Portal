@@ -95,4 +95,50 @@ describe("Student application management", () => {
       .set(authHeader(token))
     expect(again.status).toBe(400)
   })
+
+  it("snapshots the resume so later replacements do not break downloads", async () => {
+    const rec = await createRecruiter({ email: "snap-rec@test.com" })
+    const job = await createJob(rec.user._id, { status: "OPEN" })
+    const student = await createStudent({ email: "snap-st@test.edu", cgpa: 9 })
+    const res = await login(student.user.email)
+    const token = res.body.data.token
+    const headers = authHeader(token)
+
+    await addResume(token)
+    const applied = await request(app)
+      .post(`/api/jobs/${job._id}/apply`)
+      .set(headers)
+    const appId = applied.body.data.application._id
+
+    // Replace the profile resume AFTER applying.
+    await request(app)
+      .post("/api/students/me/resume")
+      .set(headers)
+      .attach("resume", Buffer.from("%PDF-1.4 replacement resume"), "resume.pdf")
+
+    const download = await request(app)
+      .get(`/api/recruiter/applications/${appId}/resume`)
+      .set(authHeader((await login(rec.user.email)).body.data.token))
+    expect(download.status).toBe(200)
+  })
+
+  it("rejects a duplicate application attempt", async () => {
+    const rec = await createRecruiter({ email: "dup-rec@test.com" })
+    const job = await createJob(rec.user._id, { status: "OPEN" })
+    const student = await createStudent({ email: "dup-st@test.edu", cgpa: 9 })
+    const res = await login(student.user.email)
+    const headers = authHeader(res.body.data.token)
+    await addResume(res.body.data.token)
+
+    const first = await request(app)
+      .post(`/api/jobs/${job._id}/apply`)
+      .set(headers)
+    expect(first.status).toBe(201)
+
+    const second = await request(app)
+      .post(`/api/jobs/${job._id}/apply`)
+      .set(headers)
+    expect(second.status).toBe(409)
+    expect(second.body.code).toBe("ALREADY_APPLIED")
+  })
 })
