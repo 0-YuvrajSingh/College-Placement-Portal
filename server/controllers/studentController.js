@@ -19,6 +19,35 @@ const PROFILE_CORE_FIELDS = [
   "graduationYear",
 ]
 
+// Only these fields may be set by the student through the profile API.
+// Sensitive fields (isPlaced, resume, user, profileCompleted) are excluded
+// to prevent mass-assignment attacks.
+const STUDENT_WRITABLE_FIELDS = [
+  "name",
+  "email",
+  "phone",
+  "department",
+  "year",
+  "semester",
+  "cgpa",
+  "graduationYear",
+  "hasActiveBacklogs",
+  "skills",
+  "rollNumber",
+  "registrationNumber",
+  "college",
+  "course",
+  "education",
+]
+
+const pickFields = (source, allowed) => {
+  const result = {}
+  for (const key of allowed) {
+    if (source[key] !== undefined) result[key] = source[key]
+  }
+  return result
+}
+
 const computeProfileCompletion = (data) =>
   PROFILE_CORE_FIELDS.every(
     (field) => data[field] !== undefined && data[field] !== null && data[field] !== "",
@@ -71,11 +100,12 @@ const createProfile = asyncHandler(async (req, res) => {
     )
   }
 
+  const safeBody = pickFields(req.body, STUDENT_WRITABLE_FIELDS)
   const payload = {
     user: req.user._id,
-    name: req.body.name || req.user.name,
-    email: req.body.email || req.user.email,
-    ...req.body,
+    name: safeBody.name || req.user.name,
+    email: safeBody.email || req.user.email,
+    ...safeBody,
   }
   payload.profileCompleted = computeProfileCompletion(payload)
 
@@ -98,16 +128,17 @@ const updateProfile = asyncHandler(async (req, res) => {
     )
   }
 
-  const merged = { ...existing.toObject(), ...req.body }
+  const safeBody = pickFields(req.body, STUDENT_WRITABLE_FIELDS)
+  const merged = { ...existing.toObject(), ...safeBody }
   merged.profileCompleted = computeProfileCompletion(merged)
 
   // Mirror identity changes (name/email) back onto the User account so the
   // auth identity stays consistent with the career profile.
-  await syncIdentity(req.user._id, { name: req.body.name, email: req.body.email })
+  await syncIdentity(req.user._id, { name: safeBody.name, email: safeBody.email })
 
   const profile = await Student.findOneAndUpdate(
     { user: req.user._id },
-    { ...req.body, profileCompleted: merged.profileCompleted },
+    { ...safeBody, profileCompleted: merged.profileCompleted },
     { new: true, runValidators: true },
   )
 

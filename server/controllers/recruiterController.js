@@ -15,6 +15,43 @@ const {
 const applicationService = require("../services/application.service")
 const { sendResumeFile } = require("../services/file.service")
 
+// Only these fields may be set by a recruiter through the profile API.
+// isApproved is admin-only and excluded to prevent self-approval.
+const RECRUITER_PROFILE_WRITABLE = [
+  "companyName",
+  "companyDescription",
+  "website",
+  "industry",
+  "location",
+  "contactPerson",
+  "contactPhone",
+  "companySize",
+]
+
+// Only these fields may be set by a recruiter when creating/updating a job.
+// recruiter is server-set and excluded to prevent ownership spoofing.
+const JOB_WRITABLE_FIELDS = [
+  "title",
+  "description",
+  "companyName",
+  "location",
+  "employmentType",
+  "workMode",
+  "salary",
+  "skills",
+  "eligibility",
+  "applicationDeadline",
+  "status",
+]
+
+const pickFields = (source, allowed) => {
+  const result = {}
+  for (const key of allowed) {
+    if (source[key] !== undefined) result[key] = source[key]
+  }
+  return result
+}
+
 const getProfile = asyncHandler(async (req, res) => {
   const profile = await Recruiter.findOne({ user: req.user._id })
   if (!profile) {
@@ -28,9 +65,10 @@ const getProfile = asyncHandler(async (req, res) => {
 })
 
 const updateProfile = asyncHandler(async (req, res) => {
+  const safeBody = pickFields(req.body, RECRUITER_PROFILE_WRITABLE)
   const profile = await Recruiter.findOneAndUpdate(
     { user: req.user._id },
-    { $set: req.body },
+    { $set: safeBody },
     { new: true, runValidators: true, upsert: true },
   )
   res.json({ success: true, data: { profile } })
@@ -76,10 +114,11 @@ const attachStudentProfiles = async (applications) => {
 // @route   POST /api/recruiter/jobs
 const createJob = asyncHandler(async (req, res) => {
   validateDeadline(req.body.applicationDeadline)
+  const safeBody = pickFields(req.body, JOB_WRITABLE_FIELDS)
   const job = await Job.create({
+    ...safeBody,
     recruiter: req.user._id,
-    status: req.body.status || JOB_STATUS.DRAFT,
-    ...req.body,
+    status: safeBody.status || JOB_STATUS.DRAFT,
   })
   res.status(201).json({ success: true, data: { job } })
 })
@@ -151,9 +190,10 @@ const updateJob = asyncHandler(async (req, res) => {
     applyJobStatusChange(job, req.body.status)
   }
 
-  Object.keys(req.body).forEach((key) => {
+  const safeBody = pickFields(req.body, JOB_WRITABLE_FIELDS)
+  Object.keys(safeBody).forEach((key) => {
     if (key !== "status") {
-      job[key] = req.body[key]
+      job[key] = safeBody[key]
     }
   })
 

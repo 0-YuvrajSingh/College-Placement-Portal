@@ -47,8 +47,9 @@ export default function Register() {
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
     const name = `${firstName.trim()} ${lastName.trim()}`.trim()
-    if (!firstName.trim() || !lastName.trim() || !email.trim() || password.length < 6) {
-      toastError("Please fill in your name, email, and a password of at least 6 characters.")
+    const MIN_PASSWORD_LENGTH = 8
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || password.length < MIN_PASSWORD_LENGTH) {
+      toastError(`Please fill in your name, email, and a password of at least ${MIN_PASSWORD_LENGTH} characters.`)
       return
     }
     if (role === "student" && (!branch || !cgpa)) {
