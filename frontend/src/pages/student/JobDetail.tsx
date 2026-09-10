@@ -51,6 +51,7 @@ export default function JobDetail() {
         setJob(data.job)
         setIsEligible(data.isEligible)
         setEligibilityReasons(data.eligibilityReasons)
+        if (data.applied) setApplied(true)
       })
       .catch(() => {
         if (active) setNotFound(true)

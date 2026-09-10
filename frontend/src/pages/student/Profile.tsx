@@ -203,7 +203,7 @@ export default function Profile() {
       setResume(uploaded)
       success("Resume uploaded")
     } catch (err) {
-      toastError(err instanceof ApiError ? err.message : "Resume upload failed")
+      toastError(err instanceof Error ? err.message : "Resume upload failed")
     } finally {
       setUploading(false)
     }

@@ -1,3 +1,5 @@
+const fs = require("fs")
+const path = require("path")
 const mongoose = require("mongoose")
 const dotenv = require("dotenv")
 
@@ -10,6 +12,30 @@ const Recruiter = require("../models/Recruiter")
 const Job = require("../models/Job")
 const Application = require("../models/Application")
 const { ROLES } = require("../config/constants")
+const { getUploadsDir, ensureUploadsDir } = require("../services/file.service")
+
+const SAMPLE_PDF = Buffer.from(
+  "%PDF-1.4\n" +
+  "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n" +
+  "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n" +
+  "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R >> endobj\n" +
+  "4 0 obj << /Length 67 >> stream\n" +
+  "BT /F1 14 Tf 72 712 Td (Aarav Mehta - Computer Science Engineering Resume) Tj ET\n" +
+  "endstream\n" +
+  "endobj\n" +
+  "xref\n" +
+  "0 5\n" +
+  "0000000000 65535 f \n" +
+  "0000000009 00000 n \n" +
+  "0000000058 00000 n \n" +
+  "0000000115 00000 n \n" +
+  "0000000214 00000 n \n" +
+  "trailer << /Root 1 0 R /Size 5 >>\n" +
+  "startxref\n" +
+  "333\n" +
+  "%%EOF\n",
+  "latin1"
+)
 
 const daysFromNow = (days) => new Date(Date.now() + days * 24 * 60 * 60 * 1000)
 
@@ -152,6 +178,14 @@ const seed = async () => {
           percentage: 8.9,
         },
       ],
+      resume: {
+        filename: "seed-resume-aarav.pdf",
+        originalname: "Aarav_Mehta_Resume.pdf",
+        path: "/api/students/me/resume",
+        mimetype: "application/pdf",
+        size: SAMPLE_PDF.length,
+        uploadedAt: new Date(),
+      },
     },
     {
       user: sanya._id,
@@ -381,27 +415,56 @@ const seed = async () => {
     status: "OPEN",
   })
 
-  // ---------- Applications ----------
-  const apply = (studentUserId, job, status, history) =>
+  // ---------- Files & Applications ----------
+  const uploadDir = ensureUploadsDir()
+  const aaravResumeFile = "seed-resume-aarav.pdf"
+  const snapSeFile = "snap-aarav-se.pdf"
+  const snapBeFile = "snap-aarav-be.pdf"
+
+  fs.writeFileSync(path.join(uploadDir, aaravResumeFile), SAMPLE_PDF)
+  fs.writeFileSync(path.join(uploadDir, snapSeFile), SAMPLE_PDF)
+  fs.writeFileSync(path.join(uploadDir, snapBeFile), SAMPLE_PDF)
+
+  const apply = (studentUserId, job, status, history, resumeSnapshot = null) =>
     Application.create({
       student: studentUserId,
       job: job._id,
       recruiter: job.recruiter,
-      resumeSnapshot: null,
+      resumeSnapshot,
       status,
       appliedAt: daysFromNow(-6),
       withdrawnAt: status === "WITHDRAWN" ? daysFromNow(-1) : null,
       statusHistory: history,
     })
 
-  await apply(aarav._id, softwareEngineer, "APPLIED", [
-    { status: "APPLIED", changedBy: aarav._id, remarks: "Application submitted" },
-  ])
+  await apply(
+    aarav._id,
+    softwareEngineer,
+    "APPLIED",
+    [{ status: "APPLIED", changedBy: aarav._id, remarks: "Application submitted" }],
+    {
+      originalName: "Aarav_Mehta_Resume.pdf",
+      storedName: snapSeFile,
+      mimeType: "application/pdf",
+      size: SAMPLE_PDF.length,
+    },
+  )
 
-  await apply(aarav._id, backendDeveloper, "SHORTLISTED", [
-    { status: "APPLIED", changedBy: aarav._id, remarks: "Application submitted" },
-    { status: "SHORTLISTED", changedBy: priya._id, remarks: "Strong profile" },
-  ])
+  await apply(
+    aarav._id,
+    backendDeveloper,
+    "SHORTLISTED",
+    [
+      { status: "APPLIED", changedBy: aarav._id, remarks: "Application submitted" },
+      { status: "SHORTLISTED", changedBy: priya._id, remarks: "Strong profile" },
+    ],
+    {
+      originalName: "Aarav_Mehta_Resume.pdf",
+      storedName: snapBeFile,
+      mimeType: "application/pdf",
+      size: SAMPLE_PDF.length,
+    },
+  )
 
   await apply(sanya._id, javaDeveloper, "APPLIED", [
     { status: "APPLIED", changedBy: sanya._id, remarks: "Application submitted" },

@@ -34,8 +34,9 @@ const registerUser = async ({
     if (cgpa != null && cgpa !== "") studentData.cgpa = Number(cgpa)
     if (rollNumber) studentData.rollNumber = rollNumber
     await Student.create(studentData)
-  } else if (user.role === ROLES.RECRUITER && companyName) {
-    await Recruiter.create({ user: user._id, companyName })
+  } else if (user.role === ROLES.RECRUITER) {
+    const safeCompanyName = (companyName && companyName.trim()) || `${name}'s Company`
+    await Recruiter.create({ user: user._id, companyName: safeCompanyName })
   }
 
   return user

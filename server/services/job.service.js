@@ -131,6 +131,8 @@ const listJobs = async (query, student) => {
       { title: searchRegex },
       { companyName: searchRegex },
       { location: searchRegex },
+      { skills: searchRegex },
+      { "eligibility.requiredSkills": searchRegex },
     ]
   }
 

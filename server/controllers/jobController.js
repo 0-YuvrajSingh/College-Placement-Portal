@@ -1,4 +1,5 @@
 const Student = require("../models/Student")
+const Application = require("../models/Application")
 const asyncHandler = require("../utils/asyncHandler")
 const jobService = require("../services/job.service")
 const { checkEligibility } = require("../services/eligibility.service")
@@ -25,6 +26,7 @@ const getJob = asyncHandler(async (req, res) => {
 
   let isEligible = null
   let eligibilityReasons = null
+  let applied = false
   if (req.user.role === ROLES.STUDENT) {
     const student = await Student.findOne({ user: req.user._id }).lean()
     if (student) {
@@ -32,11 +34,16 @@ const getJob = asyncHandler(async (req, res) => {
       isEligible = result.eligible
       eligibilityReasons = result.reasons
     }
+    const hasApplied = await Application.exists({
+      student: req.user._id,
+      job: job._id,
+    })
+    applied = Boolean(hasApplied)
   }
 
   res.json({
     success: true,
-    data: { job, isEligible, eligibilityReasons },
+    data: { job, isEligible, eligibilityReasons, applied },
   })
 })
 

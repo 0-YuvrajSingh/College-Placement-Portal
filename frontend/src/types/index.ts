@@ -256,4 +256,5 @@ export interface JobDetailPayload {
   job: Job
   isEligible: boolean | null
   eligibilityReasons: string[] | null
+  applied?: boolean
 }

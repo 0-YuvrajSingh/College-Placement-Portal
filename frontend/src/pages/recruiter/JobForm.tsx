@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom"
 import { ArrowLeft } from "lucide-react"
 import { recruiterApi, type JobPayload } from "@/api/recruiter"
 import { useToast } from "@/context/ToastContext"
+import { useAuth } from "@/context/AuthContext"
 import { ApiError } from "@/lib/api"
 import { Field, SkillInput, Spinner } from "@/components/ui"
 import PendingApproval from "@/components/PendingApproval"
@@ -82,9 +83,14 @@ const EMPTY_FORM: FormState = {
 export default function JobForm({ mode }: { mode: "create" | "edit" }) {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { user, profile } = useAuth()
   const { success, error: toastError } = useToast()
   const { pending } = useRecruiterApproval()
-  const [form, setForm] = useState<FormState | null>(mode === "edit" ? null : EMPTY_FORM)
+  const defaultCompany =
+    profile && "companyName" in profile && profile.companyName ? profile.companyName : ""
+  const [form, setForm] = useState<FormState | null>(
+    mode === "edit" ? null : { ...EMPTY_FORM, companyName: defaultCompany },
+  )
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {

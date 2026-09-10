@@ -1,4 +1,4 @@
-import { http, authHeader } from "@/lib/api"
+import { http, authHeader, ApiError } from "@/lib/api"
 import type {
   Application,
   EducationEntry,
@@ -47,7 +47,7 @@ export const studentApi = {
     })
     const body = await res.json()
     if (!res.ok || !body.success) {
-      throw new Error(body.message || "Resume upload failed")
+      throw new ApiError(body.message || "Resume upload failed", body.code || "FILE_UPLOAD_ERROR", res.status)
     }
     return body.data
   },
