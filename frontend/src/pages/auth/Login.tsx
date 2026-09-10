@@ -214,10 +214,6 @@ export default function Login() {
               {!submitting && <ArrowRight size={14} />}
             </button>
           </form>
-
-          <div style={{ textAlign: "center", marginTop: 20 }}>
-            <span style={{ color: "var(--pf-text-muted)", fontSize: 13, cursor: "default" }}>Forgot your password?</span>
-          </div>
         </div>
       </div>
     </div>
